@@ -126,7 +126,7 @@ form div {
 section > label {
   position: absolute;
   top: -10px;
-  left: 12px;
+  left: 22px;
   background-color: var(--bg-color);
   padding: 0 4px;
   font-size: 12px;
