@@ -109,7 +109,7 @@ function addSection() {
   article.insertAdjacentHTML(
     "beforeend",
     `<section>
-  <textarea name="text" placeholder="${placeholder}" rows=${rows} inputmode="text"></textarea>
+  <textarea name="text" placeholder="${placeholder}" rows=${rows}></textarea>
   <button type="button">Добавить</button>
 </section>`,
   );
