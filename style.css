@@ -126,10 +126,10 @@ form div {
 section > label {
   position: absolute;
   top: -10px;
-  left: 22px;
+  left: 12px;
   background-color: var(--bg-color);
   padding: 0 4px;
-  font-size: 12px;
+  font-size: 22px;
   color: var(--acent-color);
   pointer-events: none;
   z-index: 1;
