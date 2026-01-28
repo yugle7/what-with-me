@@ -301,7 +301,16 @@ button:hover {
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
-  display: none;
+  opacity: 0;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-outer-spin-button {
+  opacity: 0;
+}
+
+input[type="date"] {
+  appearance: none;
 }
 
 p > span {
