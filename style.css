@@ -1,0 +1,309 @@
+* {
+  padding: 0;
+  margin: 0;
+  border: none;
+  line-height: 1.5;
+  font-size: 20px;
+  font-family:
+    monospace,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans Mono",
+    "Helvetica Neue",
+    sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  word-spacing: 3px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  color-scheme: var(--tg-color-scheme);
+  /* overflow: hidden; */
+}
+
+h1 {
+  font-size: 4dvh;
+  font-weight: 500;
+  line-height: 1.1;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  color: var(--acent-color);
+}
+
+h2 {
+  font-size: 3dvh;
+  font-weight: 500;
+  padding-bottom: 10px;
+  color: var(--acent-color);
+}
+
+h3 {
+  font-size: 3dvh;
+  font-weight: 400;
+}
+
+ul {
+  list-style: none;
+  padding-left: 5px;
+  padding-bottom: 10px;
+}
+
+ol {
+  padding-left: 25px;
+  padding-bottom: 10px;
+}
+
+ul li::before {
+  content: "–";
+  padding-right: 10px;
+  line-height: 1.8;
+}
+
+menu {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: var(--bg-color);
+}
+
+section:last-child .delete,
+article > :last-child label ~ .delete {
+  display: none;
+}
+
+button {
+  background-color: transparent;
+  padding: 10px;
+}
+
+#back {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+button:focus,
+button:active,
+input:focus {
+  outline: none;
+}
+
+button {
+  color: var(--text-color);
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-inner-spin-button {
+  cursor: pointer;
+}
+
+section {
+  position: relative;
+}
+.variants {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+section,
+form div {
+  width: 100%;
+}
+
+section label {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background-color: var(--bg-color);
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--acent-color);
+  pointer-events: none;
+  z-index: 1;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  outline: none;
+  vertical-align: middle;
+}
+
+select:hover,
+select:focus,
+input:hover,
+input:focus {
+  border-color: var(--acent-color);
+  outline: none;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  appearance: textfield;
+  -webkit-appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+section input:placeholder-shown + label {
+  display: none;
+}
+
+.delete {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 40px;
+  font-size: 30px;
+  line-height: 40px;
+  color: var(--text-color);
+  opacity: 0.7;
+
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.delete:hover {
+  opacity: 1;
+}
+
+.sex {
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+}
+
+.sex label {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  background-color: var(--bg-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: var(--text-color);
+}
+
+.sex label:first-child {
+  border-right: 1px solid var(--line-color);
+}
+
+.sex label input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sex label:has(input:checked) {
+  background-color: var(--acent-color);
+}
+
+article {
+  display: none;
+  flex-direction: column;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 50px 30px 30px 30px;
+  gap: 20px;
+}
+
+.changed {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+textarea {
+  width: calc(100% + 30px);
+  padding: 15px 15px 20px 15px;
+  margin-left: -15px;
+  border: 1px solid var(--line-color);
+  border-radius: 10px;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  outline: none;
+  resize: none;
+  overflow: hidden;
+}
+
+textarea:hover,
+textarea:focus {
+  border-color: var(--acent-color);
+}
+
+section {
+  display: flex;
+  flex-direction: column;
+}
+
+section div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+section button {
+  align-self: flex-end;
+  width: fit-content;
+}
+
+button {
+  padding: 15px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: color 0.3s ease;
+  opacity: 0.8;
+}
+
+button:hover {
+  color: var(--acent-color);
+  opacity: 1;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+p > span {
+  opacity: 0.8;
+}

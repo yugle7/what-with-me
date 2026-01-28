@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Регулярное создание опросов</title>
+    <style>
+      :root {
+        --bg-color: var(--tg-theme-bg-color, rgb(30, 30, 30));
+        --acent-color: var(--tg-theme-button-color, rgb(135, 116, 225));
+        --text-color: var(--tg-theme-text-color, rgb(200, 200, 200));
+        --line-color: color-mix(in srgb, var(--text-color) 25%, transparent);
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <menu id="menu">
+      <button to="user">Обо мне</button>
+      <button to="food">Моя еда</button>
+      <button to="symptom">Мои симптомы</button>
+      <button to="plot">Графики</button>
+    </menu>
+
+    <article id="user">
+      <section>
+        <input type="number" name="time_zone" placeholder="Часовой пояс" />
+        <label class="label" for="time_zone">Часовой пояс</label>
+      </section>
+      <section>
+        <input
+          type="date"
+          name="birthday"
+          placeholder="День рождения"
+          min="1900-01-01"
+        />
+        <label class="label" for="birthday">День рождения</label>
+      </section>
+      <section>
+        <input type="number" name="height" step="0.1" placeholder="Рост" />
+        <label class="label" for="height">Рост</label>
+      </section>
+      <section>
+        <input type="number" name="weight" step="0.1" placeholder="Вес" />
+        <label class="label" for="weight">Вес</label>
+      </section>
+      <section>
+        <input
+          type="number"
+          name="target_weight"
+          step="0.1"
+          placeholder="Желаемый вес"
+        />
+        <label class="label" for="target_weight">Желаемый вес</label>
+      </section>
+
+      <div class="sex">
+        <label>
+          <input type="radio" name="sex" value="male" />
+          Мужчина
+        </label>
+        <label>
+          <input type="radio" name="sex" value="female" />
+          Женщина
+        </label>
+      </div>
+      <section>
+        <button type="button">Сохранить</button>
+      </section>
+    </article>
+    <article id="food"></article>
+    <article id="symptom"></article>
+    <article id="plot"></article>
+
+    <button id="back">
+      <svg
+        width="40"
+        height="20"
+        viewBox="0 0 40 20"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M 20 10 L 5 10 M 5 10 L 10 5 M 5 10 L 10 15"
+          stroke="var(--text-color)"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+
+    <script src="script.js"></script>
+  </body>
+</html>
