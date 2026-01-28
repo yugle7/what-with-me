@@ -27,8 +27,6 @@
 }
 
 body {
-  line-height: 1.5;
-  word-spacing: 3px;
   background-color: var(--bg-color);
   color: var(--text-color);
   color-scheme: var(--tg-color-scheme);
@@ -119,7 +117,7 @@ form div {
   width: 100%;
 }
 
-label {
+.label {
   position: absolute;
   top: -10px;
   left: 12px;
