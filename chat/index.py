@@ -1,12 +1,8 @@
 import json
 import db
 import tg
-from const import HELLO
+
 from utils import get_id
-
-
-def get_answer(user, text):
-    return text  # заглушка
 
 
 def handler(event, context):
@@ -38,7 +34,7 @@ def handle(event):
 
     text = message["text"]
     if text == "/start":
-        tg.send_message(user, HELLO)
+        tg.send_message(user, "Привет!")
         return "start"
 
     edited = "edit_date" in message
@@ -52,7 +48,7 @@ def handle(event):
     if note and note["text"] == text:
         return "the same text"
 
-    answer = get_answer(user, text)
+    answer = db.get_answer(user, created, text)
     print("answer:", answer)
     if not note:
         answer_id = tg.send_message(user_id, answer)
@@ -63,3 +59,31 @@ def handle(event):
     answer_id = note["answer_id"]
     tg.edit_message(user_id, answer_id, answer)
     return "note edited"
+
+
+if __name__ == "__main__":
+    body = {
+        "update_id": 204610942,
+        "message": {
+            "message_id": 777,
+            "from": {
+                "id": 164671585,
+                "is_bot": False,
+                "first_name": "Gleb",
+                "last_name": "Yuzhakov",
+                "username": "yugle7",
+                "language_code": "ru",
+            },
+            "chat": {
+                "id": 164671585,
+                "first_name": "Gleb",
+                "last_name": "Yuzhakov",
+                "username": "yugle7",
+                "type": "private",
+            },
+            "date": 1769629716,
+            "text": "15 минут назад съел\nщи 200 г\nхлеб 2 \nсметану 2",
+        },
+    }
+    event = {"body": json.dumps(body)}
+    handler(event, None)

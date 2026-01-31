@@ -5,7 +5,6 @@
   line-height: 1.5;
   font-weight: 400;
   font-size: 20px;
-  word-spacing: -1px;
   font-family:
     monospace,
     system-ui,
@@ -37,14 +36,13 @@ body {
 h1 {
   font-size: 30px;
   line-height: 1.1;
-  padding-top: 15px;
-  padding-bottom: 15px;
+  padding: 15px 0;
   color: var(--acent-color);
 }
 
 h2 {
   font-size: 26px;
-  padding-bottom: 10px;
+  padding: 5px 0;
   color: var(--acent-color);
 }
 

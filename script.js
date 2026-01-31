@@ -13,7 +13,7 @@ let checkDataString = Array.from(params.entries())
   .map(([key, value]) => `${key}=${value}`)
   .join("\n");
 
-let url = new URL("https://functions.yandexcloud.net/d4eml76h9lths80k2r9n");
+const url = new URL("https://functions.yandexcloud.net/d4eml76h9lths80k2r9n");
 
 user = { id: 164671585 };
 hash = "";
@@ -30,11 +30,6 @@ const backButton = document.getElementById("back");
 
 let article;
 
-const placeholders = {
-  food: "Бутерброд\nХлеб 100г\nМасло 10г\nСыр 25г\nПорция 230г",
-  symptom: "Сыпь на спине",
-};
-
 function toArticle(id) {
   menu.style.display = "none";
   backButton.style.display = "block";
@@ -43,14 +38,7 @@ function toArticle(id) {
   }
   article = document.getElementById(id);
   article.style.display = "flex";
-  url.searchParams.set("table", id);
-
-  if (id === "user") {
-    read().then((user) => toUser(user));
-  } else if (id === "plot") {
-  } else if (article.innerHTML === "") {
-    load().then((items) => toSections(items));
-  }
+  url.searchParams.set("what", id);
 }
 
 function toMenu() {
@@ -72,30 +60,16 @@ function setCursorToEnd(textarea) {
   textarea.setSelectionRange(textarea.value.length, textarea.value.length);
 }
 
-function toHtml(text) {
-  if (article.id === "food") {
-    let { title, foods } = toJson(text);
-    foods = foods
-      .map(({ title, weight }) => `<p>${title} - <span>${weight}г</span></p>`)
-      .join("");
-    return `<h2>${title}</h2>${foods}`;
-  }
-  return `<h3>${text}</h3>`;
-}
-
-function toJson(text) {
-  const lines = text.split("\n").map((l) => l.trim());
-  return {
-    title: lines[0],
-    foods: lines
-      .map((f) => /(.+?)[ -]+(\d+)[ грамов.]*/.exec(f))
-      .filter(Boolean)
-      .map((m) => ({
-        title: m[1],
-        weight: Math.abs(parseInt(m[2])),
-      })),
-  };
-}
+const toHtml = (item) => {
+  let { name, items } = item;
+  items = items
+    .map(
+      ({ name, value, unit }) =>
+        `<p>${name} - <span>${value} ${unit}</span></p>`,
+    )
+    .join("");
+  return `<h2>${name}</h2>${items}`;
+};
 
 function resize() {
   if (this.offsetHeight <= this.scrollHeight) {
@@ -103,8 +77,23 @@ function resize() {
   }
 }
 
-function addSection() {
-  const placeholder = placeholders[article.id];
+const whats = {
+  food: {
+    placeholder: [
+      "Бутерброд",
+      "Хлеб 100 гр",
+      "Масло 10 г",
+      "Порция 230г",
+      "Тарелка 300 мл",
+    ].join("\n"),
+  },
+  symptom: {
+    placeholder: "Сыпь на спине",
+  },
+};
+
+function addSection(article) {
+  const placeholder = whats[article.id].placeholder;
   rows = placeholder.split("\n").length;
   article.insertAdjacentHTML(
     "beforeend",
@@ -125,15 +114,20 @@ function addItem(e) {
   if (text === "") {
     return;
   }
-
   const section = article.lastElementChild;
-  section.innerHTML = toHtml(text);
-  section.setAttribute("data-text", text);
-  const created = Date.now().toString();
-  section.setAttribute("data-created", created);
-  create(created, text);
-  section.onclick = toForm;
-  addSection();
+  section.classList.add("changed");
+
+  const created = Date.now();
+  create(created, text)
+    .then((item) => {
+      section.innerHTML = toHtml(item);
+      section.setAttribute("data-text", text);
+      section.setAttribute("data-item", JSON.stringify(item));
+      section.setAttribute("data-created", created);
+      section.onclick = toForm;
+      addSection(article);
+    })
+    .finally(() => section.classList.remove("changed"));
 }
 
 function toForm(e) {
@@ -174,15 +168,17 @@ function toItem(e) {
   const text = section.firstElementChild.value;
 
   if (section.getAttribute("data-text") === text) {
-    section.innerHTML = toHtml(text);
+    const item = JSON.parse(section.getAttribute("data-item"));
+    section.innerHTML = toHtml(item);
     section.onclick = toForm;
   } else {
     section.classList.add("changed");
     const created = section.getAttribute("data-created");
     update(created, text)
-      .then(() => {
+      .then((item) => {
         section.setAttribute("data-text", text);
-        section.innerHTML = toHtml(text);
+        section.setAttribute("data-item", JSON.stringify(item));
+        section.innerHTML = toHtml(item);
         section.onclick = toForm;
       })
       .finally(() => {
@@ -192,8 +188,8 @@ function toItem(e) {
 }
 
 async function update(created, text) {
-  url.searchParams.set("action", "update");
   const to = new URL(url.href);
+  to.searchParams.set("action", "update");
   to.searchParams.set("created", created);
   to.searchParams.set("text", text);
   res = await fetch(to);
@@ -201,8 +197,8 @@ async function update(created, text) {
 }
 
 async function create(created, text) {
-  url.searchParams.set("action", "create");
   const to = new URL(url.href);
+  to.searchParams.set("action", "create");
   to.searchParams.set("created", created);
   to.searchParams.set("text", text);
   res = await fetch(to);
@@ -210,20 +206,32 @@ async function create(created, text) {
 }
 
 async function remove(created) {
-  url.searchParams.set("action", "remove");
   const to = new URL(url.href);
+  to.searchParams.set("action", "remove");
   to.searchParams.set("created", created);
   const res = await fetch(to);
   return res.ok;
 }
 
+read().then((user) => toUser(user));
+
+load().then((items) =>
+  Object.keys(whats).forEach((id) =>
+    toSections(
+      document.getElementById(id),
+      items.filter((i) => i.what.slice(2, -1) === id),
+    ),
+  ),
+);
+
 async function load() {
-  url.searchParams.set("action", "load");
-  const res = await fetch(url);
+  const to = new URL(url.href);
+  to.searchParams.set("action", "load");
+  const res = await fetch(to);
   return res.ok ? await res.json() : [];
 }
 
-function toSections(items) {
+function toSections(article, items) {
   article.innerHTML = items
     .map(
       ({ created, text }) =>
@@ -231,13 +239,13 @@ function toSections(items) {
     )
     .join("");
   article.querySelectorAll("section").forEach((s) => (s.onclick = toForm));
-  addSection();
+  addSection(article);
 }
 
 async function write(e) {
   e.preventDefault();
-  url.searchParams.set("action", "write");
   const to = new URL(url.href);
+  to.searchParams.set("action", "write");
 
   const time_zone = (article.querySelector('input[name="time_zone"]').value =
     user.time_zone || 3);
@@ -273,8 +281,9 @@ async function write(e) {
 }
 
 async function read() {
-  url.searchParams.set("action", "read");
-  const res = await fetch(url);
+  const to = new URL(url.href);
+  to.searchParams.set("action", "read");
+  const res = await fetch(to);
   return res.ok ? await res.json() : {};
 }
 
@@ -290,6 +299,7 @@ const asString = (s) => {
 
 function toUser(user) {
   user.birthday = user.birthday && asString(user.birthday);
+  article = document.getElementById("user");
 
   article.querySelector('input[name="time_zone"]').value = user.time_zone || 3;
   article.querySelector('input[name="birthday"]').value = user.birthday || "";

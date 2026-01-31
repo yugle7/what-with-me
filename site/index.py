@@ -1,12 +1,45 @@
 import os
 import db
-
-
+from utils import get_id
 import dotenv
 
 dotenv.load_dotenv()
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 
+
+def handle(params):
+    action = params.get("action")
+    if action not in ("create", "update", "remove", "load", "write", "read"):
+        return "unknown action"
+
+    user_id = params.get("user_id")
+
+    if action == "read":
+        return db.read(user_id)
+
+    if action == "write":
+        return db.write(user_id, params)
+
+    if action == "load":
+        return db.load(user_id)
+
+    created = int(params.get("created"))
+    id = get_id(user_id, created)
+
+    if action == "remove":
+        return db.remove(id)
+
+    text = params.get("text")
+    what = params.get("what")
+    item = db.get_item(user_id, what, text)
+
+    if action == "update":
+        return db.update(id, text, item)
+
+    if action == "create":
+        return db.create(id, user_id, text, item, created, what)
+
+    return action
 
 def handler(event, context):
     params = event["queryStringParameters"]
@@ -27,4 +60,17 @@ def handler(event, context):
     #     return {'statusCode': 200, 'body': []}
 
     print(params)
-    return {"statusCode": 200, "body": db.handle(params)}
+    return {"statusCode": 200, "body": handle(params)}
+
+
+if __name__ == "__main__":
+    event = {
+        "queryStringParameters": {
+            "user_id": 164671585,
+            "action": "update",
+            "created": 1769629716001,
+            "what": "food",
+            "text": "Мой завтрак\nборщ со свининой 200 г\nхлеб 200 г \nсметана 200 гр",
+        }
+    }
+    handler(event, None)

@@ -6,14 +6,17 @@ from cityhash import CityHash64
 import os
 
 import dotenv
+import json
+
+from utils import add_hash_ids, get_weights, add_data_ids, to_item, as_item
 
 dotenv.load_dotenv()
 
 driver = ydb.Driver(
     endpoint=os.getenv("YDB_ENDPOINT"),
     database=os.getenv("YDB_DATABASE"),
-    # credentials=ydb.AuthTokenCredentials(os.getenv('IAM_TOKEN')),
-    credentials=ydb.iam.MetadataUrlCredentials(),
+    credentials=ydb.AuthTokenCredentials(os.getenv('IAM_TOKEN')),
+    # credentials=ydb.iam.MetadataUrlCredentials(),
 )
 
 driver.wait(fail_fast=True, timeout=5)
@@ -37,46 +40,78 @@ def execute(yql):
     return pool.retry_operation_sync(wrapper)
 
 
-def get_id(a, b):
-    return CityHash64(str(a) + " " + str(b).lower().strip())
+def read(user_id):
+    res = execute(f"SELECT * FROM user WHERE id={user_id};")
+    return res[0] if res else {}
 
 
-def handle(params):
-    action = params.get("action")
-    if action not in ("create", "update", "remove", "load", "write", "read"):
-        return "unknown action"
+def write(user_id, params):
+    updates = []
+    for k in ["time_zone", "birthday", "height", "weight", "target_weight", "male"]:
+        v = params.get(k) or "null"
+        updates.append(f"{k}={v}")
+    return execute(f"UPDATE user SET {','.join(updates)} WHERE id={user_id};")
 
-    user_id = params.get("user_id")
-    table = params.get("table")
 
-    if action == "read":
-        res = execute(f"SELECT * FROM {table} WHERE id={user_id};")
-        return res[0] if res else {}
+def load(user_id):
+    return execute(f"SELECT created, text, what FROM what WHERE user_id={user_id};")
 
-    if action == "write":
-        updates = []
-        for k in ["time_zone", "birthday", "height", "weight", "target_weight", "male"]:
-            v = params.get(k) or "null"
-            updates.append(f"{k}={v}")
-        return execute(f"UPDATE {table} SET {','.join(updates)} WHERE id={user_id};")
 
-    table = "user_" + table
-    if action == "load":
-        items = execute(f"SELECT created, text FROM {table} WHERE user_id={user_id};")
-        return [
-            {"created": str(i.get("created")), "text": i.get("text")} for i in items
-        ]
+def remove(id):
+    return execute(f"DELETE FROM what WHERE id={id};")
 
-    created = int(params.get("created"))
-    id = get_id(user_id, created)
 
-    if action == "remove":
-        return execute(f"DELETE FROM {table} WHERE id={id};")
+def update(id, text, item):
+    execute(
+        f"UPDATE what SET text='{text}', item='{json.dumps(item)}' WHERE id={id};"
+    )
+    return item
 
-    text = params.get("text")
-    if action == "create":
-        return execute(
-            f"INSERT INTO {table} (id, user_id, text, created) VALUES ({id}, {user_id}, '{text}', {created});"
-        )
-    if action == "update":
-        return execute(f"UPDATE {table} SET text='{text}' WHERE id={id};")
+
+def create(id, user_id, text, item, created, what):
+    execute(
+        f"INSERT INTO what (id, user_id, text, item, created, what) VALUES ({id}, {user_id}, '{text}', '{json.dumps(item)}', {created}, '{what}');"
+    )
+    return item
+
+
+def get_where(ids):
+    return f"id IN {ids}" if len(ids) > 1 else f"id={ids[0]}"
+
+
+def get_data_ids(hash_ids):
+    res = execute(f"SELECT * FROM hash WHERE {get_where(hash_ids)};")
+    return {q["id"]: q["data_id"] for q in res}
+
+
+def get_results(data_ids):
+    res = execute(f"SELECT * FROM data WHERE {get_where(data_ids)};")
+    return {q["id"]: json.loads(q["result"]) for q in res}
+
+
+def add_results(user_id, whats, items):
+    if not items:
+        return
+
+    hash_ids = add_hash_ids(user_id, whats, items)
+    data_ids = get_data_ids(hash_ids)
+    if not data_ids:
+        return
+
+    weights = get_weights(whats, items, data_ids)
+    data_ids = add_data_ids(weights, items)
+
+    results = get_results(data_ids)
+    if not results:
+        return
+
+    for item in items:
+        if 'data_id' in item:
+            item["result"] = results[item["data_id"]]
+
+
+def get_item(user_id, what, text):
+    item = to_item(text)
+    add_results(user_id, [what], item["items"])
+    item["items"] = list(map(as_item, item["items"]))
+    return item
