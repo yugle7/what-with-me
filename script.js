@@ -117,9 +117,8 @@ function addItem(e) {
   create(created, text)
     .then((item) => {
       section.innerHTML = toHtml(item);
-      section.setAttribute("data-text", text);
-      section.setAttribute("data-item", JSON.stringify(item));
-      section.setAttribute("data-created", created);
+      data[created] = { text, item };
+      section.id = created;
       section.onclick = toForm;
       addSection(article);
     })
@@ -131,9 +130,8 @@ function toForm(e) {
   const section = e.currentTarget;
   section.onclick = null;
 
-  const text = section.getAttribute("data-text");
   section.innerHTML = `
-<textarea name="text">${text}</textarea>
+<textarea name="text">${data[section.id].text}</textarea>
 <div>
   <button type="button">Удалить</button>
   <button type="button">Сохранить</button>
@@ -152,8 +150,7 @@ function removeSection(e) {
   e.preventDefault();
   const section = e.target.parentElement.parentElement;
   section.classList.add("changed");
-  const created = section.getAttribute("data-created");
-  remove(created).then(() => section.remove());
+  remove(section.id).then(() => section.remove());
 }
 
 function toItem(e) {
@@ -163,17 +160,14 @@ function toItem(e) {
   const section = e.target.parentElement.parentElement;
   const text = section.firstElementChild.value;
 
-  if (section.getAttribute("data-text") === text) {
-    const item = JSON.parse(section.getAttribute("data-item"));
-    section.innerHTML = toHtml(item);
+  if (data[section.id].text === text) {
+    section.innerHTML = toHtml(data[section.id].item);
     section.onclick = toForm;
   } else {
     section.classList.add("changed");
-    const created = section.getAttribute("data-created");
-    update(created, text)
+    update(section.id, text)
       .then((item) => {
-        section.setAttribute("data-text", text);
-        section.setAttribute("data-item", JSON.stringify(item));
+        data[section.id] = { text, item };
         section.innerHTML = toHtml(item);
         section.onclick = toForm;
       })
@@ -220,18 +214,21 @@ load().then((items) =>
   ),
 );
 
+const data = {};
 async function load() {
   const to = new URL(url.href);
   to.searchParams.set("action", "load");
   const res = await fetch(to);
-  return res.ok ? await res.json() : [];
+  const items = res.ok ? await res.json() : [];
+  items.forEach(({ created, text, item }) => (data[created] = { text, item }));
+  return items;
 }
 
 function toSections(article, items) {
   article.innerHTML = items
     .map(
-      ({ created, text, item }) =>
-        `<section data-created="${created}" data-text="${text}" data-item="${JSON.stringify(item)}">${toHtml(item)}</section>`,
+      ({ created, item }) =>
+        `<section id="${created}">${toHtml(item)}</section>`,
     )
     .join("");
 
