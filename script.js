@@ -172,8 +172,6 @@ function toItem(e) {
     const created = section.getAttribute("data-created");
     update(created, text)
       .then((item) => {
-        console.log(item);
-
         section.setAttribute("data-text", text);
         section.setAttribute("data-item", JSON.stringify(item));
         section.innerHTML = toHtml(item);
@@ -233,7 +231,7 @@ function toSections(article, items) {
   article.innerHTML = items
     .map(
       ({ created, text, item }) =>
-        `<section data-created="${created}" data-text="${text} data-item="${JSON.stringify(item)}">${toHtml(item)}</section>`,
+        `<section data-created="${created}" data-text="${text}" data-item="${JSON.stringify(item)}">${toHtml(item)}</section>`,
     )
     .join("");
 
