@@ -13,8 +13,8 @@ dotenv.load_dotenv()
 driver = ydb.Driver(
     endpoint=os.getenv("YDB_ENDPOINT"),
     database=os.getenv("YDB_DATABASE"),
-    credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
-    # credentials=ydb.iam.MetadataUrlCredentials(),
+    # credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
+    credentials=ydb.iam.MetadataUrlCredentials(),
 )
 
 driver.wait(fail_fast=True, timeout=10)
@@ -53,15 +53,15 @@ def load_note(id):
     return res and res[0]
 
 
-def create_note(id, text, created, user_id, message_id, answer_id):
-    values = f'({id}, "{text}", {created}, {user_id}, {message_id}, {answer_id})'
+def create_note(id, text, item, created, user_id, message_id, answer_id):
+    values = f"({id}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created}, {user_id}, {message_id}, {answer_id})"
     execute(
-        f"INSERT INTO note (id, text, created, user_id, message_id, answer_id) VALUES {values};"
+        f"INSERT INTO note (id, text, item, created, user_id, message_id, answer_id) VALUES {values};"
     )
 
 
-def update_note(id, text):
-    execute(f'UPDATE note SET text="{text}" WHERE id={id};')
+def update_note(id, text, item):
+    execute(f'UPDATE note SET text="{text}", item="{json.dumps(item)}" WHERE id={id};')
 
 
 def get_where(ids):
@@ -73,12 +73,12 @@ def get_data_ids(hash_ids):
     return {q["id"]: q["data_id"] for q in res}
 
 
-def get_results(data_ids):
-    res = execute(f"SELECT * FROM hash WHERE {get_where(data_ids)};")
-    return {q["id"]: json.loads(q["result"]) for q in res}
+def get_data(data_ids):
+    res = execute(f"SELECT * FROM data WHERE {get_where(data_ids)};")
+    return {q["id"]: json.loads(q["data"]) for q in res}
 
 
-def add_results(user_id, whats, items):
+def add_data(user_id, whats, items):
     if not items:
         return
 
@@ -90,18 +90,18 @@ def add_results(user_id, whats, items):
     weights = get_weights(whats, items, data_ids)
     data_ids = add_data_ids(weights, items)
 
-    results = get_results(data_ids)
-    if not results:
+    data = get_data(data_ids)
+    if not data:
         return
 
     for item in items:
         if 'data_id' in item:
-            item["result"] = results[item["data_id"]]
+            item.update(data[item["data_id"]])
 
 
 def get_item(user_id, created, text):
     item = to_item(created, text)
-    add_results(user_id, item["whats"], item["items"])
+    add_data(user_id, item["whats"], item["items"])
     item["items"] = list(map(as_item, item["items"]))
     return item
 
@@ -109,4 +109,6 @@ def get_item(user_id, created, text):
 def get_answer(user, created, text):
     created = datetime.fromtimestamp(created + user["time_zone"] * 3600)
     item = get_item(user["id"], created, text)
-    return to_text(item)
+    answer = to_text(item)
+    item['when'] = int(item['when'].timestamp())
+    return answer, item

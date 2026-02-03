@@ -2,54 +2,7 @@ from cityhash import CityHash64
 import json
 import re
 
-suffixes = [
-    "ями",
-    "ами",
-    "ими",
-    "ыми",
-    "ому",
-    "ойю",
-    "ого",
-    "ему",
-    "его",
-    "або",
-    "яя",
-    "ях",
-    "ям",
-    "юю",
-    "ых",
-    "ым",
-    "ый",
-    "ий",
-    "ые",
-    "ую",
-    "ом",
-    "ой",
-    "ое",
-    "ов",
-    "об",
-    "их",
-    "им",
-    "ие",
-    "ем",
-    "ем",
-    "ем",
-    "ей",
-    "ее",
-    "ев",
-    "ая",
-    "ах",
-    "ам",
-    "я",
-    "ь",
-    "ю",
-    "ы",
-    "у",
-    "о",
-    "и",
-    "е",
-    "а",
-]
+from const import *
 
 
 def stem(word):
@@ -57,7 +10,7 @@ def stem(word):
         return word
     if word.endswith("ек"):
         return word[-2:] + "к"
-    for suffix in suffixes:
+    for suffix in SUFFIX:
         if word.endswith(suffix):
             n = len(suffix)
             return word if len(word) - n <= 2 else word[:-n]
@@ -107,106 +60,53 @@ def add_data_ids(weights, items):
     return dst
 
 
-def to_item(text):
-    lines = text.split("\n")
-    return {"name": lines[0], "items": [get_item(l) for l in lines[1:]]}
-
-
-def as_item(item):
-    result = item.get("result")
-    return {
-        "name": result["name"] if result else item["name"],
-        "value": item["value"],
-        "unit": item["unit"],
-    }
-
-
-def get_item(text):
-    text = text.strip()
-    m = re.fullmatch(r"(.*?)[ -]+([.,\d]+) ?(\D+)[.аиуы]?(ов)?", text)
-    if m:
-        return {
-            "name": m[1].strip(),
-            "value": float(m[2].replace(",", ".")),
-            "unit": unit.get(m[3].strip()),
-        }
-    m = re.fullmatch(r"(.*?)[ -]+([.,\d]+)", text)
-    if m:
-        return {
-            "name": m[1].strip(),
-            "value": float(m[2].replace(",", ".")),
-            "unit": "шт",
-        }
-    m = re.fullmatch(r"(.*?) - (\D+)", text)
-    if m:
-        return {
-            "name": m[1].strip(),
-            "value": 1,
-            "unit": m[2].strip(),
-        }
-    return {
-        "name": text.strip(),
-        "value": 1,
-        "unit": "шт",
-    }
-
-
-unit = {
-    "гр": "гр",
-    "г": "гр",
-    "грам": "гр",
-    "грамм": "гр",
-    "кг": "кг",
-    "мин": "мин",
-    "час": "час",
-    "минут": "мин",
-    "шт": "шт",
-    "штук": "шт",
-    "шаг": "шг",
-    "тб": "тб",
-    "таблетк": "тб",
-    "л": "л",
-    "литр": "л",
-    "мл": "мл",
-}
-
-
-def get_id(a, b):
-    return CityHash64(str(a) + " " + str(b).lower().strip())
-
 
 def load_items(what):
     with open(
         f"/Users/gleb/Projects/bots/what_with_me/src/{what}.jsonl", encoding="utf8"
     ) as src:
-        dst = [json.loads(q) for q in src]
-        t = {}
-        for q in dst:
-            if q["name"] in t:
-                if len(t[q["name"]]) < len(q):
-                    print(q)
-                    t[q["name"]] = q
-            else:
-                t[q["name"]] = q
-        return list(t.values())
+        items = [json.loads(q) for q in src]
+        src = set()
+        for item in items:
+            item['id'] = CityHash64(f"{what} {item['names'][0]}")
+            if item['id'] in src:
+                exit(item)
+            src.add(item['id'])
+
+        for name in item["names"]:
+            src.add(CityHash64(f"{what} {name}"))
+
+        dst = set()
+        for item in items:
+            if "items" in item:
+                for name in item["items"]:
+                    if CityHash64(f"{what} {name}") not in src:
+                        dst.add(name)
+
+        print("\n".join(dst))
+        return items
 
 
 def get_data_ids(what, items):
     dst = {}
-    for item in items:
-        data_id = get_id(what, item["name"])
-        for h in get_hash_ids(what, item["name"]):
-            if h not in dst:
-                dst[h] = data_id
 
     for item in items:
-        name = re.sub(r"\(.*?\)", " ", item["name"])
-        name = re.sub(r"(, )?м\.д\.ж\..*", "", name)
-        name = re.sub(r"  +", " ", name.strip())
-        if name != item["name"]:
-            data_id = get_id(what, item["name"])
-            for h in get_hash_ids(what, item["name"]):
+        for h in get_hash_ids(what, item["names"][0]):
+            if h not in dst:
+                dst[h] = item['id']
+
+    for item in items:
+        for name in item["names"][1:]:
+            for h in get_hash_ids(what, name):
                 if h not in dst:
-                    dst[h] = data_id
+                    dst[h] = item['id']
+
+    for item in items:
+        for name in item["names"]:
+            if "(" in name:
+                name = re.sub(r" ?\(.*?\) ?", " ", name)
+                for h in get_hash_ids(what, name):
+                    if h not in dst:
+                        dst[h] = item['id']
 
     return dst

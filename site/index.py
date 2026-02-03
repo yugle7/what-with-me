@@ -1,6 +1,8 @@
 import os
+
+from cityhash import CityHash64
+
 import db
-from utils import get_id
 import dotenv
 
 dotenv.load_dotenv()
@@ -24,13 +26,13 @@ def handle(params):
         return db.load(user_id)
 
     created = int(params.get("created"))
-    id = get_id(user_id, created)
+    id = CityHash64(f"{user_id} {created}")
 
     if action == "remove":
         return db.remove(id)
 
     text = params.get("text")
-    what = params.get("what")
+    what = int(params.get("what"))
     item = db.get_item(user_id, what, text)
 
     if action == "update":
@@ -40,6 +42,7 @@ def handle(params):
         return db.create(id, user_id, text, item, created, what)
 
     return action
+
 
 def handler(event, context):
     params = event["queryStringParameters"]
@@ -67,9 +70,9 @@ if __name__ == "__main__":
     event = {
         "queryStringParameters": {
             "user_id": 164671585,
-            "action": "update",
+            "action": "create",
             "created": 1769629716001,
-            "what": "food",
+            "what": 0,
             "text": "Мой завтрак\nборщ со свининой 200 г\nхлеб 200 г \nсметана 200 гр",
         }
     }

@@ -15,8 +15,8 @@ dotenv.load_dotenv()
 driver = ydb.Driver(
     endpoint=os.getenv("YDB_ENDPOINT"),
     database=os.getenv("YDB_DATABASE"),
-    credentials=ydb.AuthTokenCredentials(os.getenv('IAM_TOKEN')),
-    # credentials=ydb.iam.MetadataUrlCredentials(),
+    # credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
+    credentials=ydb.iam.MetadataUrlCredentials(),
 )
 
 driver.wait(fail_fast=True, timeout=5)
@@ -54,7 +54,12 @@ def write(user_id, params):
 
 
 def load(user_id):
-    return execute(f"SELECT created, text, what FROM what WHERE user_id={user_id};")
+    res = execute(
+        f"SELECT created, text, what, item FROM what WHERE user_id={user_id};"
+    )
+    for q in res:
+        q["item"] = json.loads(q["item"])
+    return res
 
 
 def remove(id):
@@ -62,15 +67,13 @@ def remove(id):
 
 
 def update(id, text, item):
-    execute(
-        f"UPDATE what SET text='{text}', item='{json.dumps(item)}' WHERE id={id};"
-    )
+    execute(f"UPDATE what SET text='{text}', item='{json.dumps(item)}' WHERE id={id};")
     return item
 
 
 def create(id, user_id, text, item, created, what):
     execute(
-        f"INSERT INTO what (id, user_id, text, item, created, what) VALUES ({id}, {user_id}, '{text}', '{json.dumps(item)}', {created}, '{what}');"
+        f"INSERT INTO what (id, user_id, text, item, created, what) VALUES ({id}, {user_id}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created}, {what});"
     )
     return item
 
@@ -84,12 +87,12 @@ def get_data_ids(hash_ids):
     return {q["id"]: q["data_id"] for q in res}
 
 
-def get_results(data_ids):
+def get_data(data_ids):
     res = execute(f"SELECT * FROM data WHERE {get_where(data_ids)};")
-    return {q["id"]: json.loads(q["result"]) for q in res}
+    return {q["id"]: json.loads(q["data"]) for q in res}
 
 
-def add_results(user_id, whats, items):
+def add_data(user_id, whats, items):
     if not items:
         return
 
@@ -101,17 +104,17 @@ def add_results(user_id, whats, items):
     weights = get_weights(whats, items, data_ids)
     data_ids = add_data_ids(weights, items)
 
-    results = get_results(data_ids)
-    if not results:
+    data = get_data(data_ids)
+    if not data:
         return
 
     for item in items:
-        if 'data_id' in item:
-            item["result"] = results[item["data_id"]]
+        if "data_id" in item:
+            item.update(data[item["data_id"]])
 
 
 def get_item(user_id, what, text):
     item = to_item(text)
-    add_results(user_id, [what], item["items"])
+    add_data(user_id, [what], item["items"])
     item["items"] = list(map(as_item, item["items"]))
     return item

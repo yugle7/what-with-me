@@ -1,8 +1,9 @@
 import json
+
+from cityhash import CityHash64
+
 import db
 import tg
-
-from utils import get_id
 
 
 def handler(event, context):
@@ -41,21 +42,21 @@ def handle(event):
     message_id = message["message_id"]
     created = message["date"]
 
-    id = get_id(user_id, message_id)
+    id = CityHash64(f"{user_id} {message_id}")
     note = edited and db.load_note(id)
     print("note:", note)
 
     if note and note["text"] == text:
         return "the same text"
 
-    answer = db.get_answer(user, created, text)
+    answer, item = db.get_answer(user, created, text)
     print("answer:", answer)
     if not note:
         answer_id = tg.send_message(user_id, answer)
-        db.create_note(id, text, created, user_id, message_id, answer_id)
+        db.create_note(id, text, item, created, user_id, message_id, answer_id)
         return "note created"
 
-    db.update_note(id, text)
+    db.update_note(id, text, item)
     answer_id = note["answer_id"]
     tg.edit_message(user_id, answer_id, answer)
     return "note edited"
@@ -82,7 +83,7 @@ if __name__ == "__main__":
                 "type": "private",
             },
             "date": 1769629716,
-            "text": "15 минут назад съел\nщи 200 г\nхлеб 2 \nсметану 2",
+            "text": "15 минут назад съел\nщи из молодой капусты 200 г\nхлеб 2 \nсметану 2",
         },
     }
     event = {"body": json.dumps(body)}

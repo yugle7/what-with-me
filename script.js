@@ -63,10 +63,7 @@ function setCursorToEnd(textarea) {
 const toHtml = (item) => {
   let { name, items } = item;
   items = items
-    .map(
-      ({ name, value, unit }) =>
-        `<p>${name} - <span>${value} ${unit}</span></p>`,
-    )
+    .map(({name, value, unit}) => `<p>${name} - <span>${value}</span>${unit}</p>`)
     .join("");
   return `<h2>${name}</h2>${items}`;
 };
@@ -77,23 +74,19 @@ function resize() {
   }
 }
 
-const whats = {
-  food: {
-    placeholder: [
+const placeholders = [
+   [
       "Бутерброд",
       "Хлеб 100 гр",
       "Масло 10 г",
       "Порция 230г",
       "Тарелка 300 мл",
     ].join("\n"),
-  },
-  symptom: {
-    placeholder: "Сыпь на спине",
-  },
-};
+   "Сыпь на спине",
+];
 
 function addSection(article) {
-  const placeholder = whats[article.id].placeholder;
+  const placeholder = placeholders[article.id];
   rows = placeholder.split("\n").length;
   article.insertAdjacentHTML(
     "beforeend",
@@ -176,6 +169,8 @@ function toItem(e) {
     const created = section.getAttribute("data-created");
     update(created, text)
       .then((item) => {
+        console.log(item);
+
         section.setAttribute("data-text", text);
         section.setAttribute("data-item", JSON.stringify(item));
         section.innerHTML = toHtml(item);
@@ -192,8 +187,8 @@ async function update(created, text) {
   to.searchParams.set("action", "update");
   to.searchParams.set("created", created);
   to.searchParams.set("text", text);
-  res = await fetch(to);
-  return res.ok;
+  const res = await fetch(to);
+  return res.ok ? await res.json() : {};
 }
 
 async function create(created, text) {
@@ -201,8 +196,8 @@ async function create(created, text) {
   to.searchParams.set("action", "create");
   to.searchParams.set("created", created);
   to.searchParams.set("text", text);
-  res = await fetch(to);
-  return res.ok;
+  const res = await fetch(to);
+  return res.ok ? await res.json() : {};
 }
 
 async function remove(created) {
@@ -216,10 +211,10 @@ async function remove(created) {
 read().then((user) => toUser(user));
 
 load().then((items) =>
-  Object.keys(whats).forEach((id) =>
+  [0, 1].forEach((id) =>
     toSections(
       document.getElementById(id),
-      items.filter((i) => i.what.slice(2, -1) === id),
+      items.filter((i) => i.what === id),
     ),
   ),
 );
@@ -232,10 +227,11 @@ async function load() {
 }
 
 function toSections(article, items) {
+  console.log(items)
   article.innerHTML = items
     .map(
-      ({ created, text }) =>
-        `<section data-created="${created}" data-text="${text}">${toHtml(text)}</section>`,
+      ({ created, text, item }) =>
+        `<section data-created="${created}" data-text="${text}">${toHtml(item)}</section>`,
     )
     .join("");
   article.querySelectorAll("section").forEach((s) => (s.onclick = toForm));
