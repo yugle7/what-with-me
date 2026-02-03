@@ -63,7 +63,10 @@ function setCursorToEnd(textarea) {
 const toHtml = (item) => {
   let { name, items } = item;
   items = items
-    .map(({name, value, unit}) => `<p>${name} - <span>${value}</span>${unit}</p>`)
+    .map(
+      ({ name, value, unit }) =>
+        `<p>${name} - <span>${value}</span>${unit}</p>`,
+    )
     .join("");
   return `<h2>${name}</h2>${items}`;
 };
@@ -75,14 +78,14 @@ function resize() {
 }
 
 const placeholders = [
-   [
-      "Бутерброд",
-      "Хлеб 100 гр",
-      "Масло 10 г",
-      "Порция 230г",
-      "Тарелка 300 мл",
-    ].join("\n"),
-   "Сыпь на спине",
+  [
+    "Бутерброд",
+    "Хлеб 100 гр",
+    "Масло 10 г",
+    "Порция 230г",
+    "Тарелка 300 мл",
+  ].join("\n"),
+  "Сыпь на спине",
 ];
 
 function addSection(article) {
@@ -227,13 +230,13 @@ async function load() {
 }
 
 function toSections(article, items) {
-  console.log(items)
   article.innerHTML = items
     .map(
       ({ created, text, item }) =>
-        `<section data-created="${created}" data-text="${text}">${toHtml(item)}</section>`,
+        `<section data-created="${created}" data-text="${text} data-item="${JSON.stringify(item)}">${toHtml(item)}</section>`,
     )
     .join("");
+
   article.querySelectorAll("section").forEach((s) => (s.onclick = toForm));
   addSection(article);
 }

@@ -21,7 +21,7 @@ def stem(word):
 def to_text(data):
     when = data["when"].strftime("`%d.%m %H:%M`")
     items = [
-        f'{item["name"]} - {str(item["value"]).removesuffix(".0")} {item["unit"]}'
+        f'{item["name"]} - `{str(item["value"]).removesuffix(".0")}`{item["unit"]}'
         for item in data["items"]
     ]
     return "\n".join([when] + items)

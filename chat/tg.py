@@ -10,7 +10,6 @@ dotenv.load_dotenv()
 TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 API_GATEWAY_DOMAIN = os.getenv("API_GATEWAY_DOMAIN")
 URL = "https://api.telegram.org"
-APP = "https://yugle7.github.io/whatwithme/"
 
 
 def set_webhook():
