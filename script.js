@@ -19,6 +19,16 @@ user = { id: 164671585 };
 hash = "";
 checkDataString = "";
 
+function toFetch(action, params = {}) {
+  const to = new URL(url.href);
+  to.searchParams.set("action", action);
+  Object.entries(params).forEach(([key, value]) => to.searchParams.set(key, value));
+  if (article && /^\d+$/.test(article.id)) {
+    to.searchParams.set("what", article.id);
+  }
+  return fetch(to);
+}
+
 url.searchParams.set("user_id", user["id"]);
 url.searchParams.set("hash", hash);
 url.searchParams.set("checkDataString", checkDataString);
@@ -38,7 +48,6 @@ function toArticle(id) {
   }
   article = document.getElementById(id);
   article.style.display = "flex";
-  url.searchParams.set("what", id);
 }
 
 function toMenu() {
@@ -58,6 +67,14 @@ backButton.onclick = toMenu;
 function setCursorToEnd(textarea) {
   textarea.focus();
   textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
+function getText(textarea) {
+  return textarea.value
+    .toLowerCase()
+    .replace(/ё/g, "е")
+    .replace(/[^0-9a-zа-я\- \n.,]/g, "")
+    .trim();
 }
 
 const toHtml = (item) => {
@@ -90,7 +107,7 @@ const placeholders = [
 
 function addSection(article) {
   const placeholder = placeholders[article.id];
-  rows = placeholder.split("\n").length;
+  const rows = placeholder.split("\n").length;
   article.insertAdjacentHTML(
     "beforeend",
     `<section>
@@ -106,7 +123,7 @@ function addSection(article) {
 function addItem(e) {
   e.preventDefault();
   e.stopPropagation();
-  const text = e.target.previousElementSibling.value.trim();
+  const text = getText(e.target.previousElementSibling);
   if (text === "") {
     return;
   }
@@ -158,7 +175,7 @@ function toItem(e) {
   e.stopPropagation();
 
   const section = e.target.parentElement.parentElement;
-  const text = section.firstElementChild.value;
+  const text = getText(section.firstElementChild);
 
   if (data[section.id].text === text) {
     section.innerHTML = toHtml(data[section.id].item);
@@ -178,28 +195,17 @@ function toItem(e) {
 }
 
 async function update(created, text) {
-  const to = new URL(url.href);
-  to.searchParams.set("action", "update");
-  to.searchParams.set("created", created);
-  to.searchParams.set("text", text);
-  const res = await fetch(to);
+  const res = await toFetch("update", { created, text });
   return res.ok ? await res.json() : {};
 }
 
 async function create(created, text) {
-  const to = new URL(url.href);
-  to.searchParams.set("action", "create");
-  to.searchParams.set("created", created);
-  to.searchParams.set("text", text);
-  const res = await fetch(to);
+  const res = await toFetch("create", { created, text });
   return res.ok ? await res.json() : {};
 }
 
 async function remove(created) {
-  const to = new URL(url.href);
-  to.searchParams.set("action", "remove");
-  to.searchParams.set("created", created);
-  const res = await fetch(to);
+  const res = await toFetch("remove", { created });
   return res.ok;
 }
 
@@ -216,9 +222,7 @@ load().then((items) =>
 
 const data = {};
 async function load() {
-  const to = new URL(url.href);
-  to.searchParams.set("action", "load");
-  const res = await fetch(to);
+  const res = await toFetch("load");
   const items = res.ok ? await res.json() : [];
   items.forEach(({ created, text, item }) => (data[created] = { text, item }));
   return items;
@@ -238,9 +242,6 @@ function toSections(article, items) {
 
 async function write(e) {
   e.preventDefault();
-  const to = new URL(url.href);
-  to.searchParams.set("action", "write");
-
   const time_zone = (article.querySelector('input[name="time_zone"]').value =
     user.time_zone || 3);
   const birthday = article.querySelector('input[name="birthday"]').value;
@@ -254,30 +255,28 @@ async function write(e) {
     'input[name="sex"][value="female"]',
   ).checked;
 
-  to.searchParams.set("time_zone", time_zone);
+  const params = { time_zone };
   if (birthday) {
-    to.searchParams.set("birthday", asDigits(birthday));
+    params.birthday = asDigits(birthday);
   }
   if (height) {
-    to.searchParams.set("height", height);
+    params.height = height;
   }
   if (weight) {
-    to.searchParams.set("weight", weight);
+    params.weight = weight;
   }
   if (target_weight) {
-    to.searchParams.set("target_weight", target_weight);
+    params.target_weight = target_weight;
   }
   if (male || female) {
-    to.searchParams.set("male", male);
+    params.male = male;
   }
-  const res = await fetch(to);
+  const res = await toFetch("write", params);
   return res.ok;
 }
 
 async function read() {
-  const to = new URL(url.href);
-  to.searchParams.set("action", "read");
-  const res = await fetch(to);
+  const res = await toFetch("read");
   return res.ok ? await res.json() : {};
 }
 
@@ -293,7 +292,7 @@ const asString = (s) => {
 
 function toUser(user) {
   user.birthday = user.birthday && asString(user.birthday);
-  article = document.getElementById("user");
+  const article = document.getElementById("user");
 
   article.querySelector('input[name="time_zone"]').value = user.time_zone || 3;
   article.querySelector('input[name="birthday"]').value = user.birthday || "";

@@ -284,3 +284,8 @@ input[type="date"] {
 p > span {
   opacity: 0.8;
 }
+
+h2::first-letter,
+p::first-letter {
+  text-transform: uppercase;
+}
