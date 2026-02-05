@@ -1,14 +1,12 @@
 import ydb
 import ydb.iam
 
-from cityhash import CityHash64
-
 import os
 
 import dotenv
 import json
 
-from utils import add_hash_ids, get_weights, add_data_ids, to_item, as_item
+from utils import add_hash_ids, add_data_ids, to_item, as_item
 
 dotenv.load_dotenv()
 
@@ -40,12 +38,12 @@ def execute(yql):
     return pool.retry_operation_sync(wrapper)
 
 
-def read(user_id):
+def select_user(user_id):
     res = execute(f"SELECT * FROM user WHERE id={user_id};")
     return res[0] if res else {}
 
 
-def write(user_id, params):
+def update_user(user_id, params):
     updates = []
     for k in ["time_zone", "birthday", "height", "weight", "target_weight", "male"]:
         v = params.get(k) or "null"
@@ -53,68 +51,82 @@ def write(user_id, params):
     return execute(f"UPDATE user SET {','.join(updates)} WHERE id={user_id};")
 
 
-def load(user_id):
+def select_user_what_data(user_id, what):
     res = execute(
-        f"SELECT created, text, what, item FROM what WHERE user_id={user_id};"
+        f"SELECT item FROM user_data WHERE user_id={user_id} AND what={what};"
+    )
+    res = [json.loads(q["item"]) for q in res]
+    return {q["name"]: q for q in res}
+
+
+def select_user_data(user_id):
+    res = execute(
+        f"SELECT created, text, item, what FROM user_data WHERE user_id={user_id};"
     )
     for q in res:
         q["item"] = json.loads(q["item"])
     return res
 
 
-def remove(id):
-    return execute(f"DELETE FROM what WHERE id={id};")
+def delete_user_data(id):
+    return execute(f"DELETE FROM user_data WHERE id={id};")
 
 
-def update(id, text, item):
-    execute(f"UPDATE what SET text='{text}', item='{json.dumps(item)}' WHERE id={id};")
+def update_user_data(id, text, item):
+    execute(f"UPDATE user_data SET text='{text}', item='{json.dumps(item)}' WHERE id={id};")
     return item
 
 
-def create(id, user_id, text, item, created, what):
+def insert_user_data(id, user_id, what, text, item, created):
     execute(
-        f"INSERT INTO what (id, user_id, text, item, created, what) VALUES ({id}, {user_id}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created}, {what});"
+        f"INSERT INTO user_data (id, user_id, what, text, item, created) VALUES ({id}, {user_id}, {what}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created});"
     )
     return item
 
 
-def get_where(ids):
+def where(ids):
     return f"id IN {ids}" if len(ids) > 1 else f"id={ids[0]}"
 
 
-def get_data_ids(hash_ids):
-    res = execute(f"SELECT * FROM hash WHERE {get_where(hash_ids)};")
+def select_data_ids(hash_ids):
+    res = execute(f"SELECT * FROM hash WHERE {where(hash_ids)};")
     return {q["id"]: q["data_id"] for q in res}
 
 
-def get_data(data_ids):
-    res = execute(f"SELECT * FROM data WHERE {get_where(data_ids)};")
+def select_data(ids):
+    res = execute(f"SELECT * FROM data WHERE {where(ids)};")
     return {q["id"]: json.loads(q["data"]) for q in res}
 
 
-def add_data(user_id, whats, items):
+def add_data(user_id, what, items):
     if not items:
         return
 
-    hash_ids = add_hash_ids(user_id, whats, items)
-    data_ids = get_data_ids(hash_ids)
+    data = select_user_what_data(user_id, what)
+    for item in items:
+        if item['name'] in data:
+            item['data'] = data[item['name']]
+
+    hash_ids = add_hash_ids(what, items)
+    if not hash_ids:
+        return
+
+    data_ids = select_data_ids(hash_ids)
     if not data_ids:
         return
 
-    weights = get_weights(whats, items, data_ids)
-    data_ids = add_data_ids(weights, items)
-
-    data = get_data(data_ids)
+    data_ids = add_data_ids(items, data_ids)
+    data = select_data(data_ids)
     if not data:
         return
 
     for item in items:
         if "data_id" in item:
-            item.update(data[item["data_id"]])
+            item['data'] = data[item["data_id"]]
 
 
-def get_item(user_id, what, text):
+def main(user_id, what, text):
     item = to_item(text)
-    add_data(user_id, [what], item["items"])
+    add_data(user_id, what, item["items"])
     item["items"] = list(map(as_item, item["items"]))
     return item

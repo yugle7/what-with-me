@@ -23,7 +23,7 @@ def handle(event):
     if not user_id:
         return "not user"
 
-    user = db.load_user(user_id) or db.create_user(user_id)
+    user = db.select_user(user_id) or db.insert_user(user_id)
     print("user:", user)
 
     message = body.get("message") or body.get("edited_message")
@@ -43,7 +43,7 @@ def handle(event):
     created = message["date"]
 
     id = CityHash64(f"{user_id} {message_id}")
-    note = edited and db.load_note(id)
+    note = edited and db.select_note(id)
     print("note:", note)
 
     if note and note["text"] == text:
@@ -53,7 +53,7 @@ def handle(event):
     print("answer:", answer)
     if not note:
         answer_id = tg.send_message(user_id, answer)
-        db.create_note(id, text, item, created, user_id, message_id, answer_id)
+        db.insert_note(id, text, item, created, user_id, message_id, answer_id)
         return "note created"
 
     db.update_note(id, text, item)

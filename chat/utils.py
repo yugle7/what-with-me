@@ -63,7 +63,7 @@ def get_time(when, text):
     return when
 
 
-def get_hash_ids(user_id, what, name):
+def get_hash_ids(what, name):
     names = [name]
 
     words = re.sub(r"[^a-zа-я0-9 ]", " ", name).split()
@@ -72,49 +72,34 @@ def get_hash_ids(user_id, what, name):
     names.append(" ".join(words))
     names.append(" ".join(sorted(words)))
 
-    for name in names:
-        yield CityHash64(f"{user_id} {what} {name}")
-        yield CityHash64(f"{what} {name}")
+    return [CityHash64(f"{what} {name}") for name in names]
 
 
-def add_hash_ids(user_id, whats, items):
+def add_hash_ids(what, items):
     dst = []
     for item in items:
-        item["hash_ids"] = []
-        for what in whats:
-            hash_ids = list(get_hash_ids(user_id, what, item["name"]))
-            item["hash_ids"].append((what, hash_ids))
-            dst += hash_ids
+        if "data" in item:
+            continue
+        item["hash_ids"] = list(get_hash_ids(what, item["name"]))
+        dst += item["hash_ids"]
     return tuple(set(dst))
 
 
-def get_weights(whats, items, data_ids):
-    dst = {what: 0 for what in whats}
-    for item in items:
-        item["results"] = []
-        for what, hash_ids in item.pop("hash_ids"):
-            for i, hash_id in enumerate(hash_ids):
-                if hash_id in data_ids:
-                    weight = 1 - i / len(hash_ids)
-                    item["results"].append((weight, what, data_ids[hash_id]))
-                    dst[what] += weight
-                    break
-
-    return {what: weight / len(data_ids) for what, weight in dst.items()}
-
-
-def add_data_ids(weights, items):
+def add_data_ids(items, data_ids):
     dst = []
     for item in items:
-        results = item.pop("results")
-        if results:
-            results = [
-                (weight + weights[what], what, result_id)
-                for weight, what, result_id in results
-            ]
-            item["weight"], item["what"], item["data_id"] = max(results)
-            dst.append(item["data_id"])
+        if "data" in item:
+            continue
+        for hash_id in item.pop("hash_ids"):
+            if hash_id in data_ids:
+                item["data_id"] = data_ids[hash_id]
+                dst.append(data_ids[hash_id])
+                break
     return tuple(set(dst))
+
+
+def get_what(items):
+    return 0
 
 
 def to_item(created, text):
@@ -123,13 +108,12 @@ def to_item(created, text):
     when = get_time(created, lines[0])
     if when != created:
         lines = lines[1:]
-    return {"when": when, "whats": [0], "items": [get_item(l) for l in lines]}
+    return {"when": when, "items": [get_item(l) for l in lines]}
 
 
 def as_item(item):
-    names = item.get("names")
     return {
-        "name": names[0] if names else item["name"],
+        "name": item["name"],
         "value": item["value"],
         "unit": item["unit"]
     }

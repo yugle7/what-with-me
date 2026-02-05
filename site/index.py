@@ -17,29 +17,29 @@ def handle(params):
     user_id = params.get("user_id")
 
     if action == "read":
-        return db.read(user_id)
+        return db.select_user(user_id)
 
     if action == "write":
-        return db.write(user_id, params)
+        return db.update_user(user_id, params)
 
     if action == "load":
-        return db.load(user_id)
+        return db.select_user_data(user_id)
 
     created = int(params.get("created"))
     id = CityHash64(f"{user_id} {created}")
 
     if action == "remove":
-        return db.remove(id)
+        return db.delete_user_data(id)
 
     text = params.get("text")
     what = int(params.get("what"))
-    item = db.get_item(user_id, what, text)
+    item = db.main(user_id, what, text)
 
     if action == "update":
-        return db.update(id, text, item)
+        return db.update_user_data(id, text, item)
 
     if action == "create":
-        return db.create(id, user_id, text, item, created, what)
+        return db.insert_user_data(id, user_id, text, item, created)
 
     return action
 
@@ -70,10 +70,10 @@ if __name__ == "__main__":
     event = {
         "queryStringParameters": {
             "user_id": 164671585,
-            "action": "create",
+            "action": "update",
             "created": 1769629716001,
             "what": 0,
-            "text": "Мой завтрак\nборщ со свининой 200 г\nхлеб 200 г \nсметана 200 гр",
+            "text": "Мой завтрак\nборщ со свининой 10000 г\nхлеб 200 г \nсметана 200 гр",
         }
     }
     handler(event, None)
