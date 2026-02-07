@@ -6,7 +6,7 @@ import os
 import dotenv
 import json
 
-from utils import add_hash_ids, add_data_ids, to_item, as_item
+from utils import add_hash_ids, add_data_ids, get_items, get_data
 
 dotenv.load_dotenv()
 
@@ -127,8 +127,7 @@ def add_data(user_id, what, items):
             item["data"] = data[item["data_id"]]
 
 
-def main(user_id, what, text):
-    item = to_item(text)
-    add_data(user_id, what, item["items"])
-    item["items"] = list(map(as_item, item["items"]))
-    return item
+def get_item(user_id, what, text):
+    name, items = get_items(text)
+    add_data(user_id, what, items)
+    return get_data(name, items)

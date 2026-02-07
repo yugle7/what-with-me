@@ -33,7 +33,7 @@ def handle(params):
 
     text = params.get("text")
     what = int(params.get("what"))
-    item = db.main(user_id, what, text)
+    item = db.get_item(user_id, what, text)
 
     if action == "update":
         return db.update_user_data(id, text, item)

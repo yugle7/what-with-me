@@ -52,19 +52,50 @@ def add_data_ids(items, data_ids):
     return tuple(set(dst))
 
 
-def to_item(text):
+def get_items(text):
     lines = text.lower().replace("ё", "е").split("\n")
     lines = [l.strip() for l in lines]
-    return {"name": lines[0], "items": [get_item(l) for l in lines[1:]]}
+    return lines[0], [get_item(l) for l in lines[1:]]
 
 
-def as_item(item):
-    data = item.get("data")
-    return {
-        "name": data["name"] if data else item["name"],
-        "value": item["value"],
-        "unit": item["unit"],
-    }
+def get_size(unit, sizes):
+    if unit == "":
+        unit = "piece"
+    if sizes and unit in sizes:
+        return sizes[unit]
+    if unit == "g" or unit == "ml":
+        return 1
+    if unit == "mg":
+        return 0.001
+    if unit == "mcg":
+        return 0.000001
+    if unit == "l" or unit == "kg":
+        return 1000
+    return 1
+
+
+def get_data(name, items):
+    data = {"name": name}
+    s = 0
+    for i in items:
+        if "data" in i:
+            i.update(i.pop("data"))
+        i["value"] *= get_size(i["unit"], i.get("sizes"))
+        s += i["value"]
+
+    data["items"] = {i["name"]: i["value"] for i in items}
+    for i in items:
+        i["value"] /= s
+
+    keys = ["vitamins", "nutrients", "minerals"]
+    for i in items:
+        for k in keys:
+            if k in i:
+                if k not in data:
+                    data[k] = {}
+                for name, value in i[k].items():
+                    data[k][name] = data[k].get(name, 0) + i["value"] * value
+    return data
 
 
 def get_item(name):
@@ -87,5 +118,5 @@ def get_item(name):
                 name = m[1].strip()
                 unit = m[2].strip()
 
-    unit = UNIT.get(unit)
+    unit = UNIT.get(unit, "")
     return {"name": name, "value": value, "unit": unit}

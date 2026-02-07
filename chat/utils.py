@@ -99,7 +99,25 @@ def add_data_ids(items, data_ids):
 
 
 def get_what(items):
-    return 0
+    what = None
+    for item in items:
+        if item["unit"] == "":
+            continue
+
+        if item["unit"] in ["m", "h"]:
+            t = 2
+        elif item["unit"] in ["br", "10"]:
+            t = 1
+        else:
+            t = 0
+
+        if what is None:
+            what = t
+        elif what != t:
+            what = None
+            break
+
+    return what or 0
 
 
 def to_item(created, text):
@@ -112,10 +130,12 @@ def to_item(created, text):
 
 
 def as_item(item):
+    data = item.get("data")
     return {
-        "name": item["name"],
+        "name": data["name"] if data else item["name"],
         "value": item["value"],
-        "unit": item["unit"]
+        "unit": item["unit"],
+        "data_id": item.get("data_id"),
     }
 
 
@@ -139,5 +159,5 @@ def get_item(name):
                 name = m[1].strip()
                 unit = m[2].strip()
 
-    unit = UNIT.get(unit, '')
+    unit = UNIT.get(unit, "")
     return {"name": name, "value": value, "unit": unit}
