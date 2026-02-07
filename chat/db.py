@@ -75,7 +75,7 @@ def select_data_ids(hash_ids):
 
 def select_data(data_ids):
     res = execute(f"SELECT * FROM data WHERE {where(data_ids)};")
-    return {q["id"]: json.loads(q["data"]) for q in res}
+    return {q["id"]: json.loads(q["item"]) for q in res}
 
 
 def select_user_what_data(user_id, what):
@@ -92,8 +92,8 @@ def add_data(user_id, what, items):
 
     data = select_user_what_data(user_id, what)
     for item in items:
-        if item['name'] in data:
-            item['data'] = data[item['name']]
+        if item["name"] in data:
+            item["data"] = data[item["name"]]
 
     hash_ids = add_hash_ids(what, items)
     if not hash_ids:
@@ -110,7 +110,7 @@ def add_data(user_id, what, items):
 
     for item in items:
         if "data_id" in item:
-            item['data'] = data[item["data_id"]]
+            item["data"] = data[item["data_id"]]
 
 
 def get_item(user_id, created, text):
@@ -125,5 +125,5 @@ def get_answer(user, created, text):
     created = datetime.fromtimestamp(created + user["time_zone"] * 3600)
     item = get_item(user["id"], created, text)
     answer = to_text(item)
-    item['when'] = int(item['when'].timestamp())
+    item["when"] = int(item["when"].timestamp())
     return answer, item

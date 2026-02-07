@@ -22,7 +22,9 @@ checkDataString = "";
 function toFetch(action, params = {}) {
   const to = new URL(url.href);
   to.searchParams.set("action", action);
-  Object.entries(params).forEach(([key, value]) => to.searchParams.set(key, value));
+  Object.entries(params).forEach(([key, value]) =>
+    to.searchParams.set(key, value),
+  );
   if (article && /^\d+$/.test(article.id)) {
     to.searchParams.set("what", article.id);
   }
@@ -242,6 +244,7 @@ function toSections(article, items) {
 
 async function write(e) {
   e.preventDefault();
+  article.classList.add("changed");
   const time_zone = (article.querySelector('input[name="time_zone"]').value =
     user.time_zone || 3);
   const birthday = article.querySelector('input[name="birthday"]').value;
@@ -272,6 +275,7 @@ async function write(e) {
     params.male = male;
   }
   const res = await toFetch("write", params);
+  article.classList.remove("changed");
   return res.ok;
 }
 

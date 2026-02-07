@@ -73,7 +73,9 @@ def delete_user_data(id):
 
 
 def update_user_data(id, text, item):
-    execute(f"UPDATE user_data SET text='{text}', item='{json.dumps(item)}' WHERE id={id};")
+    execute(
+        f"UPDATE user_data SET text='{text}', item='{json.dumps(item)}' WHERE id={id};"
+    )
     return item
 
 
@@ -95,7 +97,7 @@ def select_data_ids(hash_ids):
 
 def select_data(ids):
     res = execute(f"SELECT * FROM data WHERE {where(ids)};")
-    return {q["id"]: json.loads(q["data"]) for q in res}
+    return {q["id"]: json.loads(q["item"]) for q in res}
 
 
 def add_data(user_id, what, items):
@@ -104,8 +106,8 @@ def add_data(user_id, what, items):
 
     data = select_user_what_data(user_id, what)
     for item in items:
-        if item['name'] in data:
-            item['data'] = data[item['name']]
+        if item["name"] in data:
+            item["data"] = data[item["name"]]
 
     hash_ids = add_hash_ids(what, items)
     if not hash_ids:
@@ -122,7 +124,7 @@ def add_data(user_id, what, items):
 
     for item in items:
         if "data_id" in item:
-            item['data'] = data[item["data_id"]]
+            item["data"] = data[item["data_id"]]
 
 
 def main(user_id, what, text):

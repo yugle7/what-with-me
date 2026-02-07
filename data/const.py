@@ -1,3 +1,5 @@
+ROOT = "/Users/gleb/Projects/bots/what_with_me"
+
 SUFFIX = [
     "ями",
     "ами",

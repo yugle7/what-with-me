@@ -39,7 +39,7 @@ def handle(params):
         return db.update_user_data(id, text, item)
 
     if action == "create":
-        return db.insert_user_data(id, user_id, text, item, created)
+        return db.insert_user_data(id, user_id, what, text, item, created)
 
     return action
 

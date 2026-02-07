@@ -59,10 +59,11 @@ def to_item(text):
 
 
 def as_item(item):
+    data = item.get("data")
     return {
-        "name": item["name"],
+        "name": data["name"] if data else item["name"],
         "value": item["value"],
-        "unit": item["unit"]
+        "unit": item["unit"],
     }
 
 
