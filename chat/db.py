@@ -5,7 +5,7 @@ import ydb.iam
 import os
 
 import dotenv
-from utils import add_hash_ids, add_data_ids, to_item, as_item, to_text, get_what
+from utils import add_hash_ids, add_data_ids, get_items, get_data, get_text, get_what
 from datetime import datetime
 
 dotenv.load_dotenv()
@@ -13,8 +13,8 @@ dotenv.load_dotenv()
 driver = ydb.Driver(
     endpoint=os.getenv("YDB_ENDPOINT"),
     database=os.getenv("YDB_DATABASE"),
-    # credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
-    credentials=ydb.iam.MetadataUrlCredentials(),
+    credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
+    # credentials=ydb.iam.MetadataUrlCredentials(),
 )
 
 driver.wait(fail_fast=True, timeout=10)
@@ -48,37 +48,37 @@ def insert_user(id):
     return res and res[0]
 
 
-def select_note(id):
-    res = execute(f"SELECT * FROM note WHERE id={id};")
+def select_chat(id):
+    res = execute(f"SELECT * FROM chat WHERE id={id};")
     return res and res[0]
 
 
-def insert_note(id, text, item, created, user_id, message_id, answer_id):
+def insert_chat(id, text, item, created, user_id, message_id, answer_id):
     values = f"({id}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created}, {user_id}, {message_id}, {answer_id})"
     execute(
-        f"INSERT INTO note (id, text, item, created, user_id, message_id, answer_id) VALUES {values};"
+        f"INSERT INTO chat (id, text, item, created, user_id, message_id, answer_id) VALUES {values};"
     )
 
 
-def update_note(id, text, item):
-    execute(f'UPDATE note SET text="{text}", item="{json.dumps(item)}" WHERE id={id};')
+def update_chat(id, text, item):
+    execute(f'UPDATE chat SET text="{text}", item="{json.dumps(item)}" WHERE id={id};')
 
 
 def where(ids):
     return f"id IN {ids}" if len(ids) > 1 else f"id={ids[0]}"
 
 
-def select_data_ids(hash_ids):
+def load_data_ids(hash_ids):
     res = execute(f"SELECT * FROM hash WHERE {where(hash_ids)};")
     return {q["id"]: q["data_id"] for q in res}
 
 
-def select_data(data_ids):
+def load_data_items(data_ids):
     res = execute(f"SELECT * FROM data WHERE {where(data_ids)};")
     return {q["id"]: json.loads(q["item"]) for q in res}
 
 
-def select_user_what_data(user_id, what):
+def load_site_items(user_id, what):
     res = execute(
         f"SELECT item FROM user_data WHERE user_id={user_id} AND what={what};"
     )
@@ -90,40 +90,42 @@ def add_data(user_id, what, items):
     if not items:
         return
 
-    data = select_user_what_data(user_id, what)
+    site_items = load_site_items(user_id, what)
     for item in items:
-        if item["name"] in data:
-            item["data"] = data[item["name"]]
+        name = item["name"]
+        if name in site_items:
+            item.update(site_items[name])
+            item["data_id"] = None
 
     hash_ids = add_hash_ids(what, items)
     if not hash_ids:
         return
 
-    data_ids = select_data_ids(hash_ids)
+    data_ids = load_data_ids(hash_ids)
     if not data_ids:
         return
 
     data_ids = add_data_ids(items, data_ids)
-    data = select_data(data_ids)
-    if not data:
+    data_items = load_data_items(data_ids)
+    if not data_items:
         return
 
     for item in items:
-        if "data_id" in item:
-            item["data"] = data[item["data_id"]]
+        data_id = item.pop("data_id")
+        if data_id and data_id in data_items:
+            item.update(data_items[data_id])
 
 
 def get_item(user_id, created, text):
-    item = to_item(created, text)
-    what = get_what(item["items"])
-    add_data(user_id, what, item["items"])
-    item["items"] = list(map(as_item, item["items"]))
-    return item
+    when, items = get_items(created, text)
+    what = get_what(items)
+    add_data(user_id, what, items)
+    return get_data(when, items)
 
 
 def get_answer(user, created, text):
     created = datetime.fromtimestamp(created + user["time_zone"] * 3600)
     item = get_item(user["id"], created, text)
-    answer = to_text(item)
+    answer = get_text(item)
     item["when"] = int(item["when"].timestamp())
     return answer, item

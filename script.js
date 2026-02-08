@@ -82,7 +82,7 @@ function getText(textarea) {
 const toHtml = (item) => {
   let { name, items } = item;
   items = Object.entries(items)
-    .map(([name, value]) => `<p>${name} - <span>${value}</span>$</p>`)
+    .map(([name, value]) => `<p>${name} - <span>${value}</span></p>`)
     .join("");
   return `<h2>${name}</h2>${items}`;
 };

@@ -1,4 +1,5 @@
 from cityhash import CityHash64
+from datetime import datetime
 
 import re
 
@@ -32,9 +33,9 @@ def get_hash_ids(what, name):
 def add_hash_ids(what, items):
     dst = []
     for item in items:
-        if "data" in item:
+        if "data_id" in item:
             continue
-        item["hash_ids"] = list(get_hash_ids(what, item["name"]))
+        item["hash_ids"] = get_hash_ids(what, item["name"])
         dst += item["hash_ids"]
     return tuple(set(dst))
 
@@ -42,13 +43,12 @@ def add_hash_ids(what, items):
 def add_data_ids(items, data_ids):
     dst = []
     for item in items:
-        if "data" in item:
-            continue
-        for hash_id in item.pop("hash_ids"):
-            if hash_id in data_ids:
-                item["data_id"] = data_ids[hash_id]
-                dst.append(data_ids[hash_id])
-                break
+        if "hash_ids" in item:
+            for hash_id in item.pop("hash_ids"):
+                if hash_id in data_ids:
+                    item["data_id"] = data_ids[hash_id]
+                    dst.append(data_ids[hash_id])
+                    break
     return tuple(set(dst))
 
 
@@ -78,8 +78,6 @@ def get_data(name, items):
     data = {"name": name}
     s = 0
     for i in items:
-        if "data" in i:
-            i.update(i.pop("data"))
         i["value"] *= get_size(i["unit"], i.get("sizes"))
         s += i["value"]
 

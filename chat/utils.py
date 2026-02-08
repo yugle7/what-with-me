@@ -18,12 +18,9 @@ def stem(word):
     return word
 
 
-def to_text(data):
+def get_text(data):
     when = data["when"].strftime("`%d.%m %H:%M`")
-    items = [
-        f'{item["name"]} - `{str(item["value"]).removesuffix(".0")}`{item["unit"]}'
-        for item in data["items"]
-    ]
+    items = [f"{name} - `{int(value)}`" for name, value in data["items"].items()]
     return "\n".join([when] + items)
 
 
@@ -120,23 +117,51 @@ def get_what(items):
     return what or 0
 
 
-def to_item(created, text):
+def get_items(created, text):
     lines = text.lower().replace("ё", "е").split("\n")
     lines = [l.strip() for l in lines]
     when = get_time(created, lines[0])
     if when != created:
         lines = lines[1:]
-    return {"when": when, "items": [get_item(l) for l in lines]}
+    return when, [get_item(l) for l in lines]
 
 
-def as_item(item):
-    data = item.get("data")
-    return {
-        "name": data["name"] if data else item["name"],
-        "value": item["value"],
-        "unit": item["unit"],
-        "data_id": item.get("data_id"),
-    }
+def get_size(unit, sizes):
+    if unit == "":
+        unit = "piece"
+    if sizes and unit in sizes:
+        return sizes[unit]
+    if unit == "g" or unit == "ml":
+        return 1
+    if unit == "mg":
+        return 0.001
+    if unit == "mcg":
+        return 0.000001
+    if unit == "l" or unit == "kg":
+        return 1000
+    return 1
+
+
+def get_data(when, items):
+    data = {"when": when}
+    s = 0
+    for i in items:
+        i["value"] *= get_size(i["unit"], i.get("sizes"))
+        s += i["value"]
+
+    data["items"] = {i["name"]: i["value"] for i in items}
+    for i in items:
+        i["value"] /= s
+
+    keys = ["vitamins", "nutrients", "minerals"]
+    for i in items:
+        for k in keys:
+            if k in i:
+                if k not in data:
+                    data[k] = {}
+                for name, value in i[k].items():
+                    data[k][name] = data[k].get(name, 0) + i["value"] * value
+    return data
 
 
 def get_item(name):

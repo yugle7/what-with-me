@@ -23,23 +23,23 @@ def handle(params):
         return db.update_user(user_id, params)
 
     if action == "load":
-        return db.select_user_data(user_id)
+        return db.select_site(user_id)
 
     created = int(params.get("created"))
     id = CityHash64(f"{user_id} {created}")
 
     if action == "remove":
-        return db.delete_user_data(id)
+        return db.delete_site(id)
 
     text = params.get("text")
     what = int(params.get("what"))
     item = db.get_item(user_id, what, text)
 
     if action == "update":
-        return db.update_user_data(id, text, item)
+        return db.update_site(id, text, item)
 
     if action == "create":
-        return db.insert_user_data(id, user_id, what, text, item, created)
+        return db.insert_site(id, user_id, what, text, item, created)
 
     return action
 

@@ -51,37 +51,40 @@ def update_user(user_id, params):
     return execute(f"UPDATE user SET {','.join(updates)} WHERE id={user_id};")
 
 
-def select_user_what_data(user_id, what):
-    res = execute(
-        f"SELECT item FROM user_data WHERE user_id={user_id} AND what={what};"
-    )
+def load_chat_items(user_id):
+    res = execute(f"SELECT what, item FROM chat WHERE user_id={user_id};")
+    for q in res:
+        q["item"] = json.loads(q["item"])
+    return res
+
+
+def load_site_items(user_id, what):
+    res = execute(f"SELECT item FROM site WHERE user_id={user_id} AND what={what};")
     res = [json.loads(q["item"]) for q in res]
     return {q["name"]: q for q in res}
 
 
-def select_user_data(user_id):
+def select_site(user_id):
     res = execute(
-        f"SELECT created, text, item, what FROM user_data WHERE user_id={user_id};"
+        f"SELECT created, text, item, what FROM site WHERE user_id={user_id};"
     )
     for q in res:
         q["item"] = json.loads(q["item"])
     return res
 
 
-def delete_user_data(id):
-    return execute(f"DELETE FROM user_data WHERE id={id};")
+def delete_site(id):
+    return execute(f"DELETE FROM site WHERE id={id};")
 
 
-def update_user_data(id, text, item):
-    execute(
-        f"UPDATE user_data SET text='{text}', item='{json.dumps(item)}' WHERE id={id};"
-    )
+def update_site(id, text, item):
+    execute(f"UPDATE site SET text='{text}', item='{json.dumps(item)}' WHERE id={id};")
     return item
 
 
-def insert_user_data(id, user_id, what, text, item, created):
+def insert_site(id, user_id, what, text, item, created):
     execute(
-        f"INSERT INTO user_data (id, user_id, what, text, item, created) VALUES ({id}, {user_id}, {what}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created});"
+        f"INSERT INTO site (id, user_id, what, text, item, created) VALUES ({id}, {user_id}, {what}, '{text}', '{json.dumps(item, ensure_ascii=False)}', {created});"
     )
     return item
 
@@ -90,12 +93,12 @@ def where(ids):
     return f"id IN {ids}" if len(ids) > 1 else f"id={ids[0]}"
 
 
-def select_data_ids(hash_ids):
+def load_data_ids(hash_ids):
     res = execute(f"SELECT * FROM hash WHERE {where(hash_ids)};")
     return {q["id"]: q["data_id"] for q in res}
 
 
-def select_data(ids):
+def load_data_items(ids):
     res = execute(f"SELECT * FROM data WHERE {where(ids)};")
     return {q["id"]: json.loads(q["item"]) for q in res}
 
@@ -104,27 +107,30 @@ def add_data(user_id, what, items):
     if not items:
         return
 
-    data = select_user_what_data(user_id, what)
+    site_items = load_site_items(user_id, what)
     for item in items:
-        if item["name"] in data:
-            item["data"] = data[item["name"]]
+        name = item["name"]
+        if name in site_items:
+            item.update(site_items[name])
+            item["data_id"] = None
 
     hash_ids = add_hash_ids(what, items)
     if not hash_ids:
         return
 
-    data_ids = select_data_ids(hash_ids)
+    data_ids = load_data_ids(hash_ids)
     if not data_ids:
         return
 
     data_ids = add_data_ids(items, data_ids)
-    data = select_data(data_ids)
-    if not data:
+    data_items = load_data_items(data_ids)
+    if not data_items:
         return
 
     for item in items:
-        if "data_id" in item:
-            item["data"] = data[item["data_id"]]
+        data_id = item.pop("data_id", None)
+        if data_id and data_id in data_items:
+            item.update(data_items[data_id])
 
 
 def get_item(user_id, what, text):

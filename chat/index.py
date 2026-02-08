@@ -43,23 +43,23 @@ def handle(event):
     created = message["date"]
 
     id = CityHash64(f"{user_id} {message_id}")
-    note = edited and db.select_note(id)
-    print("note:", note)
-
-    if note and note["text"] == text:
-        return "the same text"
+    res = edited and db.select_chat(id)
+    if res:
+        print("res:", res)
+        if res["text"] == text:
+            return "the same text"
 
     answer, item = db.get_answer(user, created, text)
     print("answer:", answer)
-    if not note:
+    if not res:
         answer_id = tg.send_message(user_id, answer)
-        db.insert_note(id, text, item, created, user_id, message_id, answer_id)
-        return "note created"
+        db.insert_chat(id, text, item, created, user_id, message_id, answer_id)
+        return "created"
 
-    db.update_note(id, text, item)
-    answer_id = note["answer_id"]
+    db.update_chat(id, text, item)
+    answer_id = res["answer_id"]
     tg.edit_message(user_id, answer_id, answer)
-    return "note edited"
+    return "edited"
 
 
 if __name__ == "__main__":
