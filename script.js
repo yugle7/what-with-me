@@ -749,7 +749,7 @@ load().then((items) =>
 );
 
 const getDate = (user) => {
-  const date = new Date(Date.now() + user.time_zone * 3600000);
+  const date = new Date(Date.now() + user.time_zone * 3600000 + 86400000);
   date.setHours(0, 0, 0, 0);
   return date.getTime() / 1000 - days * 86400;
 };
