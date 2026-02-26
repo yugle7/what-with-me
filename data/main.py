@@ -8,7 +8,7 @@ def main(what):
     data_ids = get_data_ids(what, items)
     print("hash:", len(data_ids))
 
-    # db.save_hash(data_ids)
+    db.save_hash(data_ids)
     db.save_data(items)
 
 

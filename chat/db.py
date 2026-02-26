@@ -13,8 +13,8 @@ dotenv.load_dotenv()
 driver = ydb.Driver(
     endpoint=os.getenv("YDB_ENDPOINT"),
     database=os.getenv("YDB_DATABASE"),
-    credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
-    # credentials=ydb.iam.MetadataUrlCredentials(),
+    # credentials=ydb.AuthTokenCredentials(os.getenv("IAM_TOKEN")),
+    credentials=ydb.iam.MetadataUrlCredentials(),
 )
 
 driver.wait(fail_fast=True, timeout=10)
@@ -111,7 +111,7 @@ def add_data(user_id, what, items):
         return
 
     for item in items:
-        data_id = item.pop("data_id")
+        data_id = item.pop("data_id", None)
         if data_id and data_id in data_items:
             item.update(data_items[data_id])
 

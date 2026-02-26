@@ -208,7 +208,7 @@ section > input:placeholder-shown + label {
 article {
   display: none;
   flex-direction: column;
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto;
   padding: 50px 30px 30px 30px;
   gap: 20px;
@@ -263,7 +263,6 @@ button {
 }
 
 button:hover {
-  color: var(--acent-color);
   opacity: 1;
 }
 
@@ -288,4 +287,71 @@ p > span {
 h2::first-letter,
 p::first-letter {
   text-transform: uppercase;
+}
+
+svg line {
+  stroke: var(--line-color);
+}
+
+#plot button {
+  margin: 0;
+  padding: 0;
+}
+
+svg {
+  height: auto;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-height: 300px;
+}
+
+#names {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  column-gap: 20px;
+}
+
+#names button::before {
+  content: "";
+  display: inline-block;
+  width: 20px;
+  height: 4px;
+  margin-right: 10px;
+  background-color: var(--color);
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+#dates {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+#dates button {
+  font-size: 20px;
+  width: 24px;
+}
+
+#links {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#links div {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+#links div button {
+  color: var(--color);
+}
+
+#plot button {
+  opacity: 1;
 }

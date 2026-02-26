@@ -45,23 +45,29 @@ def select_user(user_id):
 
 def update_user(user_id, params):
     updates = []
-    for k in ["time_zone", "birthday", "height", "weight", "target_weight", "male"]:
+    for k in [
+        "time_zone",
+        "birthday",
+        "height",
+        "weight",
+        "target_weight",
+        "male",
+        "activity",
+    ]:
         v = params.get(k) or "null"
         updates.append(f"{k}={v}")
     return execute(f"UPDATE user SET {','.join(updates)} WHERE id={user_id};")
-
-
-def load_chat_items(user_id):
-    res = execute(f"SELECT what, item FROM chat WHERE user_id={user_id};")
-    for q in res:
-        q["item"] = json.loads(q["item"])
-    return res
 
 
 def load_site_items(user_id, what):
     res = execute(f"SELECT item FROM site WHERE user_id={user_id} AND what={what};")
     res = [json.loads(q["item"]) for q in res]
     return {q["name"]: q for q in res}
+
+
+def load_chat_items(user_id):
+    res = execute(f"SELECT item FROM chat WHERE user_id={user_id};")
+    return [json.loads(q["item"]) for q in res]
 
 
 def select_site(user_id):

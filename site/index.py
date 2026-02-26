@@ -11,10 +11,10 @@ TG_BOT_TOKEN = os.getenv("TG_BOT_TOKEN")
 
 def handle(params):
     action = params.get("action")
-    if action not in ("create", "update", "remove", "load", "write", "read"):
-        return "unknown action"
-
     user_id = params.get("user_id")
+
+    if action == "take":
+        return db.load_chat_items(user_id)
 
     if action == "read":
         return db.select_user(user_id)
