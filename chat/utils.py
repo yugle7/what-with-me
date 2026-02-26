@@ -144,14 +144,12 @@ def get_size(unit, sizes):
 
 def get_data(when, items):
     data = {"when": when}
-    s = 0
     for i in items:
         i["value"] *= get_size(i["unit"], i.get("sizes"))
-        s += i["value"]
 
     data["items"] = {i["name"]: i["value"] for i in items}
     for i in items:
-        i["value"] /= s
+        i["value"] /= 100
 
     keys = ["vitamins", "nutrients", "minerals"]
     for i in items:

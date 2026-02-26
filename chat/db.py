@@ -61,7 +61,7 @@ def insert_chat(id, text, item, created, user_id, message_id, answer_id):
 
 
 def update_chat(id, text, item):
-    execute(f'UPDATE chat SET text="{text}", item="{json.dumps(item)}" WHERE id={id};')
+    execute(f"UPDATE chat SET text='{text}', item='{json.dumps(item)}' WHERE id={id};")
 
 
 def where(ids):

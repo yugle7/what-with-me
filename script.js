@@ -362,13 +362,6 @@ const dh = 2;
 const sh = 100 - 2 * dh;
 const days = 7;
 
-// Вычисление диапазона дат
-const maxDate = new Date();
-const minDate = new Date(maxDate);
-minDate.setDate(minDate.getDate() - days);
-minDate.setHours(0, 0, 0, 0);
-maxDate.setHours(0, 0, 0, 0);
-
 // Данные о питательных веществах и их цветах
 const nutrientsData = {
   nutrients: {
@@ -412,7 +405,7 @@ const displayed = [];
 // Добавление кнопок с датами
 const addDates = () => {
   const buttons = [];
-  const d = new Date(minDate);
+  const d = new Date(date * 1000);
   for (let i = 0; i <= days; i++) {
     buttons.push(`<button>${d.getDate()}</button>`);
     d.setDate(d.getDate() + 1);
@@ -649,14 +642,13 @@ function display(link) {
 
 // Получение количества дней от минимальной даты
 function getDays(when) {
-  const ms = new Date(when * 1000) - minDate;
-  return ms / (1000 * 60 * 60 * 24);
+  const ms = when - date;
+  return ms / 86400;
 }
 
 // Получение суточных норм пользователя
 function getNormas(user) {
-  const age =
-    (new Date().getTime() - new Date(user.birthday).getTime()) / 31536000000;
+  const age = (Date.now() - new Date(user.birthday).getTime()) / 31536000000;
   console.log(age);
   console.log(user);
   user.activity = 1.2;
@@ -731,7 +723,6 @@ async function take() {
 
 function toPlot(user, items) {
   normas = getNormas(user);
-  console.log(normas);
 
   addDates();
   addAxis();
@@ -757,7 +748,16 @@ load().then((items) =>
   ),
 );
 
+const getDate = (user) => {
+  const date = new Date(Date.now() + user.time_zone * 3600000);
+  date.setHours(0, 0, 0, 0);
+  return date.getTime() / 1000 - days * 86400;
+};
+
+let date;
+
 Promise.all([read(), take()]).then(([user, items]) => {
+  date = getDate(user);
   toUser(user);
   toPlot(user, items);
 });
